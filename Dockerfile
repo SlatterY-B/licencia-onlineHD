@@ -1,14 +1,12 @@
-# Imagen base de Java 21
-FROM eclipse-temurin:21-jdk
-
-# Establece el directorio de trabajo
+# Etapa 1: Construir el JAR
+FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
+COPY . .
+RUN ./mvnw clean package -DskipTests
 
-# Copia el archivo jar generado por Spring Boot
-COPY target/demo-0.0.1-SNAPSHOT.jar app.jar
-
-# Expone el puerto que usa Spring Boot
+# Etapa 2: Imagen ligera final con solo el JAR
+FROM eclipse-temurin:21-jdk
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Comando para ejecutar la app
 ENTRYPOINT ["java", "-jar", "app.jar"]
