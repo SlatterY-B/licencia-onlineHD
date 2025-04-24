@@ -1,12 +1,23 @@
-# Etapa 1: Construcción
-FROM eclipse-temurin:17-jdk as build
-WORKDIR /app
-COPY . .
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+# Imagen base oficial de Maven con JDK 17
+FROM maven:3.9.4-eclipse-temurin-17 AS builder
 
-# Etapa 2: Imagen liviana
-FROM eclipse-temurin:17-jre
+# Carpeta de trabajo dentro del contenedor
 WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Copiamos todo el contenido del proyecto
+COPY . .
+
+# Compilamos el proyecto (sin tests para que no falle)
+RUN mvn clean package -DskipTests
+
+# Imagen final liviana (solo el JAR)
+FROM eclipse-temurin:17-jdk
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
+# Puerto (por si lo usas en local)
+EXPOSE 8080
+
+CMD ["java", "-jar", "app.jar"]
